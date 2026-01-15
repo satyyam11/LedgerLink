@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -11,10 +12,15 @@ from routes.api import create_api_blueprint
 
 app = Flask(__name__)
 
-# ✅ Correct CORS (fixes OPTIONS 404)
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},
+    resources={r"/api/*": {
+        "origins": [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://ledger-link-theta.vercel.app"
+        ]
+    }},
     supports_credentials=True
 )
 
@@ -35,4 +41,8 @@ def home():
     return {"message": "LedgerLink Backend Running"}
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
+    )
