@@ -60,6 +60,7 @@ class Invoice(Base):
 
     total = Column(Float)
     currency = Column(String, default="INR")
+    status = Column(String, default="Pending") # Pending, Paid, Overdue, Cancelled
     issue_date = Column(DateTime, default=datetime.utcnow)
     due_date = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)

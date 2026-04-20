@@ -11,6 +11,7 @@ import Expenses from "./pages/Expenses.jsx";
 import Invoices from "./pages/Invoices.jsx";
 import Customers from "./pages/Customers.jsx";
 import Products from "./pages/Products.jsx";
+import Analytics from "./pages/Analytics.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import { isLoggedIn } from "./auth";
@@ -21,6 +22,7 @@ const navItems = [
   { to: "/invoices", label: "Invoices" },
   { to: "/customers", label: "Customers" },
   { to: "/products", label: "Products" },
+  { to: "/analytics", label: "Live Insights" },
 ];
 
 function ProtectedRoute({ children }) {
@@ -36,7 +38,6 @@ export default function App() {
     location.pathname === "/login" || location.pathname === "/register";
 
   if (isAuthPage) {
-    // Auth layout (no sidebar)
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -45,9 +46,14 @@ export default function App() {
     );
   }
 
-  // Main app layout (protected)
   return (
     <div className="app-root">
+        {/* Parallax rupee animation */}
+  <div className="rupee-layer layer1"></div>
+  <div className="rupee-layer layer2"></div>
+  <div className="rupee-layer layer3"></div>
+
+
       <aside className="sidebar">
         <NavLink to="/" className="brand">
           <div className="brand-logo">Ł</div>
@@ -88,6 +94,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/expenses"
               element={
@@ -96,6 +103,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/invoices"
               element={
@@ -104,6 +112,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/customers"
               element={
@@ -112,6 +121,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/products"
               element={
@@ -120,6 +130,16 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <Analytics />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </section>

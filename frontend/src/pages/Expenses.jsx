@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import { SkeletonTable } from "../components/Skeleton.jsx";
+import { useToast } from "../components/Toast.jsx";
 
 export default function Expenses() {
+  const { addToast } = useToast();
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
 
   async function loadExpenses() {
     try {
+      setListLoading(true);
       const res = await api.getExpenses();
-      setRows(res.data || []);
+      setRows(res || []);
     } catch (err) {
       console.error(err);
+    } finally {
+      setListLoading(false);
     }
   }
 
@@ -31,10 +38,12 @@ export default function Expenses() {
       const res = await api.categorizeExpense(text.trim());
       setResult(res.data);
       setText("");
+      addToast("Expense categorized successfully");
       await loadExpenses();
     } catch (err) {
       console.error(err);
       setError(err.message);
+      addToast(err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -88,39 +97,43 @@ export default function Expenses() {
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
         <h4>Stored Expenses</h4>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Text</th>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Vendor</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.id}</td>
-                  <td>{(r.original_text || "").slice(0, 60)}</td>
-                  <td>{r.category}</td>
-                  <td>{r.amount}</td>
-                  <td>{r.vendor}</td>
-                  <td>{(r.date || "").slice(0, 10)}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+        {listLoading ? (
+          <SkeletonTable rows={5} cols={6} />
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan="6" className="muted">
-                    No expenses yet. Try adding one above.
-                  </td>
+                  <th>ID</th>
+                  <th>Text</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Vendor</th>
+                  <th>Date</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td>
+                    <td>{(r.text || "").slice(0, 60)}</td>
+                    <td>{r.category}</td>
+                    <td>{r.amount}</td>
+                    <td>{r.vendor}</td>
+                    <td>{(r.date || "").slice(0, 10)}</td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="muted">
+                      No expenses yet. Try adding one above.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

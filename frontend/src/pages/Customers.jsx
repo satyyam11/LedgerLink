@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
+import { SkeletonTable } from "../components/Skeleton.jsx";
+import { useToast } from "../components/Toast.jsx";
 
 export default function Customers() {
+  const { addToast } = useToast();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -11,13 +14,26 @@ export default function Customers() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
 
   async function loadCustomers() {
     try {
+      setListLoading(true);
+      setError("");
+      console.log("Fetching customers...");
       const res = await api.getCustomers();
-      setRows(res.data || []);
+      console.log("Customers API response:", res);
+      if (res && res.success && Array.isArray(res.data)) {
+        setRows(res.data);
+      } else {
+        console.warn("Expected success response with data array, got:", res);
+        setRows([]);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load customers:", err);
+      setError(err.message || "An unknown error occurred while loading customers.");
+    } finally {
+      setListLoading(false);
     }
   }
 
@@ -36,10 +52,12 @@ export default function Customers() {
     try {
       await api.createCustomer(form);
       setForm({ name: "", email: "", phone: "", address: "" });
+      addToast("Customer added successfully");
       await loadCustomers();
     } catch (err) {
       console.error(err);
       setError(err.message);
+      addToast(err.message, "error");
     } finally {
       setLoading(false);
     }
@@ -47,6 +65,16 @@ export default function Customers() {
 
   function updateField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  if (error) {
+    return (
+      <div className="card" style={{ marginTop: "2rem", borderColor: "red" }}>
+        <h3 style={{ color: "red" }}>Error</h3>
+        <p>{error}</p>
+        <button onClick={() => { setError(""); loadCustomers(); }}>Retry</button>
+      </div>
+    );
   }
 
   return (
@@ -87,42 +115,46 @@ export default function Customers() {
           </div>
         </div>
         <button type="submit" disabled={loading}>
-          {loading ? "Saving..." : "Add Customer"}
+          {loading ? "Processing..." : "Add Customer"}
         </button>
         {error && <div className="error">{error}</div>}
       </form>
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
         <h4>Customer List</h4>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.id}</td>
-                  <td>{r.name}</td>
-                  <td>{r.email}</td>
-                  <td>{r.phone}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+        {listLoading ? (
+          <SkeletonTable rows={5} cols={4} />
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan="4" className="muted">
-                    No customers yet.
-                  </td>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {(rows || []).map((r) => (
+                  <tr key={r?.id || Math.random()}>
+                    <td>{r?.id}</td>
+                    <td>{r?.name}</td>
+                    <td>{r?.email}</td>
+                    <td>{r?.phone}</td>
+                  </tr>
+                ))}
+                {(!rows || rows.length === 0) && (
+                  <tr>
+                    <td colSpan="4" className="muted">
+                      No customers yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
