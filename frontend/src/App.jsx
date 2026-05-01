@@ -3,18 +3,14 @@ import {
   Route,
   Routes,
   Navigate,
-  useLocation,
 } from "react-router-dom";
-
 import Dashboard from "./pages/Dashboard.jsx";
 import Expenses from "./pages/Expenses.jsx";
 import Invoices from "./pages/Invoices.jsx";
 import Customers from "./pages/Customers.jsx";
 import Products from "./pages/Products.jsx";
 import Analytics from "./pages/Analytics.jsx";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import { isLoggedIn } from "./auth";
+import Chatbot from "./components/Chatbot.jsx";
 
 const navItems = [
   { to: "/", label: "Dashboard" },
@@ -25,27 +21,7 @@ const navItems = [
   { to: "/analytics", label: "Live Insights" },
 ];
 
-function ProtectedRoute({ children }) {
-  if (!isLoggedIn()) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-}
-
 export default function App() {
-  const location = useLocation();
-  const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/register";
-
-  if (isAuthPage) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    );
-  }
-
   return (
     <div className="app-root">
         {/* Parallax rupee animation */}
@@ -86,64 +62,18 @@ export default function App() {
 
         <section className="page">
           <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/expenses"
-              element={
-                <ProtectedRoute>
-                  <Expenses />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/invoices"
-              element={
-                <ProtectedRoute>
-                  <Invoices />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/customers"
-              element={
-                <ProtectedRoute>
-                  <Customers />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/products"
-              element={
-                <ProtectedRoute>
-                  <Products />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute>
-                  <Analytics />
-                </ProtectedRoute>
-              }
-            />
-
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </section>
       </main>
+
+      <Chatbot />
     </div>
   );
 }

@@ -28,6 +28,7 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     email = Column(String)
     phone = Column(String)
@@ -42,6 +43,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     sku = Column(String, unique=True)
     name = Column(String, nullable=False)
     unit_price = Column(Float, default=0.0)
@@ -55,6 +57,7 @@ class Invoice(Base):
     __tablename__ = "invoices"
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     invoice_number = Column(String, unique=True)
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
 
@@ -91,6 +94,7 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     original_text = Column(Text)
     amount = Column(Float)
     currency = Column(String, default="INR")

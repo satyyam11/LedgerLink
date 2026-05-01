@@ -1,11 +1,13 @@
 export const API_BASE = "http://localhost:5000/api";
 
 async function request(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
+    headers,
     ...options
   });
 
@@ -41,6 +43,14 @@ export const api = {
     });
   },
 
+  // ---------- CHATBOT ----------
+  async chatbotQuery(query) {
+    return request("/chatbot/query", {
+      method: "POST",
+      body: JSON.stringify({ query })
+    });
+  },
+
   // ---------- EXPENSE ----------
   async categorizeExpense(text) {
     return request("/expense/categorize", {
@@ -66,11 +76,10 @@ export const api = {
   },
 
   async updateInvoiceStatus(id, status) {
-    return fetch(`${API_BASE}/invoices/${id}/status`, {
+    return request(`/invoices/${id}/status`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
-    }).then(r => r.json());
+    });
   },
 
   // ---------- CUSTOMERS ----------
@@ -93,6 +102,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload)
     });
+  },
+
+  // ---------- STATS ----------
+  async getStats() {
+    return request("/stats");
   }
 
 };

@@ -526,3 +526,118 @@ tr:last-child td {
   width: 100%;
   margin-bottom: 0.25rem;
 }
+
+/* ========================= */
+/* Logout Button */
+/* ========================= */
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  color: #f87171;
+  font-size: 0.85rem;
+}
+
+.logout-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  transform: none;
+}
+
+/* ========================= */
+/* Chatbot */
+/* ========================= */
+
+.chatbot-toggle {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 1.75rem;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+  z-index: 10000;
+}
+
+.chatbot-window {
+  position: fixed;
+  bottom: 6rem;
+  right: 2rem;
+  width: 380px;
+  height: 500px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 10000;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.chatbot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(31, 41, 55, 0.8);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.chatbot-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chatbot-header button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.chatbot-messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chatbot-message {
+  max-width: 85%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.chatbot-user {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  align-self: flex-end;
+}
+
+.chatbot-bot {
+  background: rgba(30, 41, 59, 0.9);
+  align-self: flex-start;
+  border: 1px solid rgba(55, 65, 81, 0.8);
+}
+
+.chatbot-input {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(31, 41, 55, 0.8);
+}
+
+.chatbot-input input {
+  flex: 1;
+}
+
+.chatbot-input button {
+  padding-inline: 1rem;
+}

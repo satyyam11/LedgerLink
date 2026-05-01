@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -8,6 +9,8 @@ from services.init_db import init_db
 from services.expense_ai import ExpenseAI
 from services.invoice_ai import InvoiceAI
 from routes.api import create_api_blueprint
+from services.database import SessionLocal
+from services.models import User
 
 app = Flask(__name__)
 
@@ -19,6 +22,21 @@ CORS(
 
 print("Starting LedgerLink Backend...")
 
+# Initialize Gemini AI
+gemini_client = None
+try:
+    import google.genai as genai
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    if GEMINI_API_KEY:
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        print("Gemini AI initialized!")
+    else:
+        print("GEMINI_API_KEY not found in .env, chatbot will use rule-based mode.")
+except ImportError:
+    print("google-genai not installed, chatbot will use rule-based mode.")
+except Exception as e:
+    print(f"Error initializing Gemini: {e}, chatbot will use rule-based mode.")
+
 print("Loading AI models...")
 expense_ai = ExpenseAI()
 invoice_ai = InvoiceAI()
@@ -28,7 +46,21 @@ print("Initializing database...")
 init_db()
 print("Database ready!")
 
-api_bp = create_api_blueprint(expense_ai, invoice_ai)
+print("Creating demo user...")
+db = SessionLocal()
+try:
+    demo_user = db.query(User).filter(User.id == 1).first()
+    if not demo_user:
+        demo_user = User(email="demo@ledgerlink.com")
+        db.add(demo_user)
+        db.commit()
+        print("Demo user created!")
+    else:
+        print("Demo user already exists!")
+finally:
+    db.close()
+
+api_bp = create_api_blueprint(expense_ai, invoice_ai, gemini_client)
 app.register_blueprint(api_bp, url_prefix="/api")
 
 

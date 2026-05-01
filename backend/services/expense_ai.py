@@ -71,40 +71,71 @@ class ExpenseAI:
             "date": datetime.now().strftime("%Y-%m-%d")
         }
 
-        # 1. Extraction with spaCy (if available)
-        if self.nlp:
-            doc = self.nlp(text)
-            # Try to find organizations or people as vendors
-            ents = [ent.text for ent in doc.ents if ent.label_ in ["ORG", "PERSON"]]
-            if ents:
-                # Use the first entity found as a candidate
-                candidate = ents[0]
-                # Fuzzy match against our known vendor list
-                if HAS_RAPIDFUZZ:
-                    match = process.extractOne(candidate, self.vendor_list, scorer=fuzz.WRatio)
-                    if match and match[1] > 70: # 70% confidence threshold
-                        result["vendor"] = match[0]
-                    else:
-                        result["vendor"] = candidate.title()
-                else:
-                    result["vendor"] = candidate.title()
-
-        # 2. Fallback fuzzy match on the whole text if vendor still unknown
+        print(f"Parsing expense: {text}")
+        
+        # 0. EXTRA: Direct typo check for common misspellings!
+        text_lower = text.lower()
+        typo_map = {
+            "amezon": "Amazon",
+            "flipcrt": "Flipkart",
+            "myntaa": "Myntra",
+            "zomat": "Zomato",
+            "swiggyy": "Swiggy",
+        }
+        for typo, correct in typo_map.items():
+            if typo in text_lower:
+                result["vendor"] = correct
+                print(f"Direct typo match: {typo} → {correct}")
+                break
+        
+        # 1. Try ALL fuzzy scorers!
         if result["vendor"] == "Unknown Vendor" and HAS_RAPIDFUZZ:
-            # Split text into words and try to match each against vendor list
             words = text.split()
             best_match = None
             highest_score = 0
             
             for word in words:
-                if len(word) < 3: continue
-                m = process.extractOne(word, self.vendor_list, scorer=fuzz.WRatio)
-                if m and m[1] > highest_score:
-                    highest_score = m[1]
-                    best_match = m[0]
+                if len(word) < 3:
+                    continue
+                # Try every scorer!
+                for scorer_name, scorer in [
+                    ("ratio", fuzz.ratio),
+                    ("partial_ratio", fuzz.partial_ratio),
+                    ("token_set_ratio", fuzz.token_set_ratio),
+                    ("token_sort_ratio", fuzz.token_sort_ratio),
+                    ("WRatio", fuzz.WRatio),
+                    ("QRatio", fuzz.QRatio),
+                ]:
+                    m = process.extractOne(word, self.vendor_list, scorer=scorer)
+                    if m:
+                        print(f"  Word '{word}' with {scorer_name}: {m[0]} (score: {m[1]})")
+                        if m[1] > highest_score:
+                            highest_score = m[1]
+                            best_match = m[0]
             
-            if highest_score > 70: # Lower threshold for better catch-all
+            print(f"Best fuzzy match: {best_match} (score: {highest_score})")
+            
+            if highest_score > 35:  # Very low threshold for demo!
                 result["vendor"] = best_match
+                print(f"Setting vendor to: {result['vendor']}")
+        
+        # 2. Then direct keyword check as backup
+        if result["vendor"] == "Unknown Vendor":
+            text_lower = text.lower()
+            for vendor in self.vendor_list:
+                vendor_lower = vendor.lower()
+                if vendor_lower in text_lower:
+                    result["vendor"] = vendor
+                    break
+
+        # 3. Then try spaCy NER as last resort
+        if result["vendor"] == "Unknown Vendor" and self.nlp:
+            doc = self.nlp(text)
+            ents = [ent.text for ent in doc.ents if ent.label_ in ["ORG", "PERSON"]]
+            if ents:
+                result["vendor"] = ents[0].title()
+        
+        print(f"Final vendor: {result['vendor']}")
 
         # 3. Amount Extraction (Regex remains strong for this)
         amount_patterns = [

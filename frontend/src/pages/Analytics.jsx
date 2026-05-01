@@ -18,9 +18,11 @@ export default function Analytics() {
         api.getInvoices().catch(() => [])
       ]);
       
+      console.log("Invoices received:", invoices);
+      
       setData({ 
         expenses: Array.isArray(expenses) ? expenses : [], 
-        invoices: Array.isArray(invoices) ? invoices : (invoices?.data || [])
+        invoices: Array.isArray(invoices) ? invoices : []
       });
       setLastUpdated(new Date());
     } catch (err) {
@@ -50,13 +52,29 @@ export default function Analytics() {
 
     // Process Invoices
     data.invoices.forEach(i => {
-      const date = (i.due || i.due_date || "").slice(0, 10);
+      const date = (i.issue_date || i.due || i.due_date || "").slice(0, 10);
       if (!date) return;
       if (!dailyMap[date]) dailyMap[date] = { date, expense: 0, invoice: 0 };
-      dailyMap[date].invoice += Number(i.amount) || 0;
+      dailyMap[date].invoice += Number(i.total || i.amount) || 0;
     });
 
-    return Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
+    // Create a continuous 30-day date range
+    const result = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      
+      result.push({
+        date: dateStr,
+        expense: dailyMap[dateStr]?.expense || 0,
+        invoice: dailyMap[dateStr]?.invoice || 0
+      });
+    }
+
+    return result;
   }, [data]);
 
   if (loading && chartData.length === 0) {
