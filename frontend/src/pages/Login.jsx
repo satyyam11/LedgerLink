@@ -146,11 +146,35 @@ export default function Login() {
           </p>
         </div>
         
-        <div className="auth-right">
+        <div className="auth-right" onClick={() => navigate("/register")} style={{ cursor: "pointer" }}>
+          <div style={{ 
+            position: "absolute", 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: "rgba(0,0,0,0.03)", 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            borderRadius: "0 24px 24px 0"
+          }}>
+            <div style={{ 
+              background: "linear-gradient(135deg, #6366f1, #7c3aed)", 
+              color: "white", 
+              padding: "1rem 2rem", 
+              borderRadius: "12px", 
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              boxShadow: "0 10px 30px rgba(99, 102, 241, 0.4)"
+            }}>
+              Click here to Register →
+            </div>
+          </div>
           <h2>Create Account</h2>
           <p className="auth-right-subtitle">Register to get started</p>
           
-          <div className="auth-form">
+          <div className="auth-form" style={{ opacity: 0.6, pointerEvents: "none" }}>
             <div className="auth-input-group">
               <label>Full Name</label>
               <div className="auth-input-wrapper">
