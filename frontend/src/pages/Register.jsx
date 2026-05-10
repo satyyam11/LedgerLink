@@ -53,7 +53,6 @@ export default function Register() {
     setError("");
     
     try {
-      // Demo Google OAuth - in production, this would use Google Sign-In
       const demoEmail = prompt("Enter your email for Google OAuth demo:");
       
       if (demoEmail) {
@@ -70,80 +69,15 @@ export default function Register() {
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-left">
+      <div className="auth-container auth-container-single">
+        <div className="auth-single-panel">
           <div className="auth-brand">
-            <div className="auth-brand-logo">Ł</div>
+            <div className="auth-brand-logo">L</div>
             <h1 className="auth-brand-name">LedgerLink</h1>
           </div>
           
-          <h1 className="auth-welcome">Welcome Back!</h1>
-          <p className="auth-subtitle">Login to continue</p>
-          
-          <div className="auth-form">
-            <div className="auth-input-group">
-              <label>Email</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">✉️</span>
-                <input
-                  type="email"
-                  className="auth-input"
-                  placeholder="Enter your email"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <div className="auth-input-group">
-              <label>Password</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">🔒</span>
-                <input
-                  type="password"
-                  className="auth-input"
-                  placeholder="Enter your password"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <div className="auth-options">
-              <label className="auth-remember">
-                <input type="checkbox" disabled />
-                Remember me
-              </label>
-              <a href="#" className="auth-forgot">Forgot Password?</a>
-            </div>
-            
-            <button type="button" className="auth-btn" disabled style={{ opacity: 0.5 }}>
-              Login
-            </button>
-            
-            <div className="auth-divider">
-              <div className="auth-divider-line"></div>
-              <span className="auth-divider-text">or</span>
-              <div className="auth-divider-line"></div>
-            </div>
-            
-            <button 
-              type="button" 
-              className="auth-oauth-btn"
-              disabled
-            >
-              <span className="auth-oauth-icon">🌐</span>
-              Continue with Google
-            </button>
-          </div>
-          
-          <p className="auth-switch">
-            Don't have an account?{" "}
-            <Link to="/register" className="auth-switch-link">Sign up</Link>
-          </p>
-        </div>
-        
-        <div className="auth-right">
-          <h2>Create Account</h2>
-          <p className="auth-right-subtitle">Register to get started</p>
+          <h1 className="auth-welcome">Create Account</h1>
+          <p className="auth-subtitle">Register to get started</p>
           
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="auth-input-group">

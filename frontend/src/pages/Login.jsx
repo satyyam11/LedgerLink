@@ -34,7 +34,6 @@ export default function Login() {
     setError("");
     
     try {
-      // Demo Google OAuth - in production, this would use Google Sign-In
       const demoEmail = prompt("Enter your email for Google OAuth demo:");
       
       if (demoEmail) {
@@ -51,10 +50,10 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-left">
+      <div className="auth-container auth-container-single">
+        <div className="auth-single-panel">
           <div className="auth-brand">
-            <div className="auth-brand-logo">Ł</div>
+            <div className="auth-brand-logo">L</div>
             <h1 className="auth-brand-name">LedgerLink</h1>
           </div>
           
@@ -68,7 +67,6 @@ export default function Login() {
                 <span className="auth-input-icon">✉️</span>
                 <input
                   type="email"
-                  required
                   className="auth-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -83,7 +81,6 @@ export default function Login() {
                 <span className="auth-input-icon">🔒</span>
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   className="auth-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -143,103 +140,6 @@ export default function Login() {
           <p className="auth-switch">
             Don't have an account?{" "}
             <Link to="/register" className="auth-switch-link">Sign up</Link>
-          </p>
-        </div>
-        
-        <div className="auth-right" onClick={() => navigate("/register")} style={{ cursor: "pointer" }}>
-          <div style={{ 
-            position: "absolute", 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            background: "rgba(0,0,0,0.03)", 
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center",
-            borderRadius: "0 24px 24px 0"
-          }}>
-            <div style={{ 
-              background: "linear-gradient(135deg, #6366f1, #7c3aed)", 
-              color: "white", 
-              padding: "1rem 2rem", 
-              borderRadius: "12px", 
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              boxShadow: "0 10px 30px rgba(99, 102, 241, 0.4)"
-            }}>
-              Click here to Register →
-            </div>
-          </div>
-          <h2>Create Account</h2>
-          <p className="auth-right-subtitle">Register to get started</p>
-          
-          <div className="auth-form" style={{ opacity: 0.6, pointerEvents: "none" }}>
-            <div className="auth-input-group">
-              <label>Full Name</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">👤</span>
-                <input
-                  type="text"
-                  className="auth-input"
-                  placeholder="Enter your name"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <div className="auth-input-group">
-              <label>Email</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">✉️</span>
-                <input
-                  type="email"
-                  className="auth-input"
-                  placeholder="Enter your email"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <div className="auth-input-group">
-              <label>Password</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">🔒</span>
-                <input
-                  type="password"
-                  className="auth-input"
-                  placeholder="Create a password"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <div className="auth-input-group">
-              <label>Confirm Password</label>
-              <div className="auth-input-wrapper">
-                <span className="auth-input-icon">🔒</span>
-                <input
-                  type="password"
-                  className="auth-input"
-                  placeholder="Confirm your password"
-                  disabled
-                />
-              </div>
-            </div>
-            
-            <label className="auth-terms">
-              <input type="checkbox" disabled />
-              <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
-            </label>
-            
-            <button type="button" className="auth-btn" disabled style={{ opacity: 0.5 }}>
-              Register
-            </button>
-          </div>
-          
-          <p className="auth-switch">
-            Already have an account?{" "}
-            <Link to="/login" className="auth-switch-link">Login</Link>
           </p>
         </div>
       </div>
