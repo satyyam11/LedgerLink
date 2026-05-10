@@ -20,6 +20,11 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
+    if (!name || !email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -147,7 +152,6 @@ export default function Register() {
                 <span className="auth-input-icon">👤</span>
                 <input
                   type="text"
-                  required
                   className="auth-input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -162,7 +166,6 @@ export default function Register() {
                 <span className="auth-input-icon">✉️</span>
                 <input
                   type="email"
-                  required
                   className="auth-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -177,7 +180,6 @@ export default function Register() {
                 <span className="auth-input-icon">🔒</span>
                 <input
                   type={showPassword ? "text" : "password"}
-                  required
                   className="auth-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -198,7 +200,6 @@ export default function Register() {
                 <span className="auth-input-icon">🔒</span>
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  required
                   className="auth-input"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
