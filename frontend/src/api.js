@@ -1,4 +1,4 @@
-export const API_BASE = "https://ledgerlink-2.onrender.com/api";
+export const API_BASE = "http://localhost:5000/api";
 
 async function request(path, options = {}) {
   const headers = {
@@ -40,6 +40,13 @@ export const api = {
     return request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password })
+    });
+  },
+
+  async googleAuth(email) {
+    return request("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ email, id_token: "demo_token" })
     });
   },
 

@@ -1,12 +1,14 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session, url_for, redirect
 from datetime import datetime, timedelta
 import time
 import random
+import os
 from services.database import SessionLocal
-from services.models import Expense, Invoice, Customer, Product
+from services.models import Expense, Invoice, Customer, Product, User
 from services.auth_service import register_user, login_user
-from services.auth_utils import decode_access_token
+from services.auth_utils import decode_access_token, create_access_token
 import re
+from authlib.integrations.flask_client import OAuth
 
 
 def get_current_user():
@@ -619,5 +621,155 @@ How can I assist you today?"""
             return jsonify({"error": str(e)}), 500
         finally:
             db.close()
+
+    # ---------- GOOGLE OAUTH ----------
+    oauth = OAuth()
+
+    # Initialize Google OAuth client
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+    google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+
+    if google_client_id and google_client_secret:
+        oauth.register(
+            name='google',
+            client_id=google_client_id,
+            client_secret=google_client_secret,
+            access_token_url='https://accounts.google.com/o/oauth2/token',
+            access_token_params=None,
+            authorize_url='https://accounts.google.com/o/oauth2/auth',
+            authorize_params=None,
+            api_base_url='https://www.googleapis.com/oauth2/v1/',
+            client_kwargs={'scope': 'openid email profile'},
+            server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
+        )
+
+    @bp.route("/auth/google/login", methods=["GET"])
+    def google_login():
+        if not google_client_id or not google_client_secret:
+            return jsonify({"error": "Google OAuth not configured"}), 500
+        
+        redirect_uri = url_for('api.google_callback', _external=True)
+        return oauth.google.authorize_redirect(redirect_uri)
+
+    @bp.route("/auth/google/callback", methods=["GET"])
+    def google_callback():
+        if not google_client_id or not google_client_secret:
+            return jsonify({"error": "Google OAuth not configured"}), 500
+        
+        try:
+            token = oauth.google.authorize_access_token()
+            user_info = token.get('userinfo')
+            
+            if not user_info or not user_info.get('email'):
+                return jsonify({"error": "Failed to get user info from Google"}), 400
+            
+            email = user_info['email']
+            google_id = user_info.get('sub')
+            
+            db = SessionLocal()
+            try:
+                # Check if user exists
+                user = db.query(User).filter(User.email == email).first()
+                
+                if user:
+                    # User exists, update google_id if not set
+                    if not user.google_id and google_id:
+                        user.google_id = google_id
+                        db.commit()
+                else:
+                    # Create new user
+                    user = User(
+                        email=email,
+                        google_id=google_id,
+                        password_hash=None
+                    )
+                    db.add(user)
+                    db.commit()
+                    db.refresh(user)
+                
+                # Create access token
+                access_token = create_access_token(user.id)
+                
+                # For frontend integration, we can redirect with token in query param
+                # or return JSON (we'll do both for flexibility)
+                frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+                
+                # Return both options: redirect and JSON
+                return jsonify({
+                    "success": True,
+                    "token": access_token,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email
+                    },
+                    "redirect_url": f"{frontend_url}?token={access_token}"
+                })
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            print("Google OAuth error:", str(e))
+            return jsonify({"error": "Google authentication failed"}), 500
+
+    @bp.route("/auth/google", methods=["POST"])
+    def google_auth_token():
+        """Alternative Google OAuth endpoint that accepts an ID token from frontend"""
+        data = request.get_json() or {}
+        id_token = data.get("id_token")
+        
+        if not id_token:
+            return jsonify({"error": "id_token required"}), 400
+        
+        try:
+            # For this demo, we'll simulate Google token verification
+            # In production, you should verify the token with Google's API
+            
+            # For now, let's create a demo Google auth flow that just creates/gets user by email
+            # In production, use google-auth library to verify the token
+            
+            # Extract email from a mock payload (in real use, verify the token first!)
+            # For demo purposes, we'll expect the frontend to send email in the payload too
+            email = data.get("email")
+            
+            if not email:
+                return jsonify({"error": "email required for demo"}), 400
+            
+            db = SessionLocal()
+            try:
+                # Check if user exists
+                user = db.query(User).filter(User.email == email).first()
+                
+                if user:
+                    pass
+                else:
+                    # Create new user
+                    user = User(
+                        email=email,
+                        google_id=f"demo_{email}",
+                        password_hash=None
+                    )
+                    db.add(user)
+                    db.commit()
+                    db.refresh(user)
+                
+                # Create access token
+                access_token = create_access_token(user.id)
+                
+                return jsonify({
+                    "success": True,
+                    "token": access_token,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email
+                    }
+                })
+                
+            finally:
+                db.close()
+                
+        except Exception as e:
+            print("Google token auth error:", str(e))
+            return jsonify({"error": "Authentication failed"}), 500
 
     return bp

@@ -14,6 +14,7 @@ google-genai==1.0.0
 # --- HTTP / Auth ---
 requests==2.32.5
 PyJWT==2.10.1
+authlib==1.3.2
 
 # --- Database / ORM ---
 SQLAlchemy==2.0.44
