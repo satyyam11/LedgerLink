@@ -53,7 +53,7 @@ export default function Login() {
       <div className="auth-container auth-container-single">
         <div className="auth-single-panel">
           <div className="auth-brand">
-            <div className="auth-brand-logo">L</div>
+            <div className="auth-brand-logo">Ł</div>
             <h1 className="auth-brand-name">LedgerLink</h1>
           </div>
           
