@@ -4,12 +4,16 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import { isLoggedIn, clearToken } from "./auth";
+import { useState, useEffect } from "react";
 import Dashboard from "./pages/Dashboard.jsx";
 import Expenses from "./pages/Expenses.jsx";
 import Invoices from "./pages/Invoices.jsx";
 import Customers from "./pages/Customers.jsx";
 import Products from "./pages/Products.jsx";
 import Analytics from "./pages/Analytics.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import Chatbot from "./components/Chatbot.jsx";
 
 const navItems = [
@@ -21,7 +25,50 @@ const navItems = [
   { to: "/analytics", label: "Live Insights" },
 ];
 
+function ProtectedRoute({ children }) {
+  if (!isLoggedIn()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+function AuthRoute({ children }) {
+  if (isLoggedIn()) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
 export default function App() {
+  const [authState, setAuthState] = useState(isLoggedIn());
+
+  useEffect(() => {
+    setAuthState(isLoggedIn());
+  }, []);
+
+  const handleLogout = () => {
+    clearToken();
+    setAuthState(false);
+  };
+
+  if (!authState) {
+    return (
+      <Routes>
+        <Route path="/login" element={
+          <AuthRoute>
+            <Login />
+          </AuthRoute>
+        } />
+        <Route path="/register" element={
+          <AuthRoute>
+            <Register />
+          </AuthRoute>
+        } />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <div className="app-root">
         {/* Parallax rupee animation */}
@@ -53,6 +100,10 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+
+        <button className="logout-btn" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       <main className="main">
@@ -62,12 +113,36 @@ export default function App() {
 
         <section className="page">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/expenses" element={
+              <ProtectedRoute>
+                <Expenses />
+              </ProtectedRoute>
+            } />
+            <Route path="/invoices" element={
+              <ProtectedRoute>
+                <Invoices />
+              </ProtectedRoute>
+            } />
+            <Route path="/customers" element={
+              <ProtectedRoute>
+                <Customers />
+              </ProtectedRoute>
+            } />
+            <Route path="/products" element={
+              <ProtectedRoute>
+                <Products />
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </section>

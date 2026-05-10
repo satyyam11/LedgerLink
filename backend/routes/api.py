@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 import time
+import random
 from services.database import SessionLocal
 from services.models import Expense, Invoice, Customer, Product
 from services.auth_service import register_user, login_user
@@ -48,50 +49,67 @@ def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):
             customers = db.query(Customer).filter(Customer.user_id == user_id).all()
             products = db.query(Product).filter(Product.user_id == user_id).all()
 
-            # Build context string
-            context = "Here is the user's financial data:\n\n"
+            # Build detailed context string
+            context = "Here is the user's complete financial data:\n\n"
             
             if expenses:
-                context += "EXPENSES:\n"
+                context += "=== EXPENSES ===\n"
                 for e in expenses:
-                    context += f"- {e.original_text} | ₹{e.amount} | {e.category} | {e.date}\n"
+                    context += f"- {e.original_text} | Amount: ₹{e.amount} | Category: {e.category} | Date: {e.date}\n"
             
             if invoices:
-                context += "\nINVOICES:\n"
+                context += "\n=== INVOICES ===\n"
                 for i in invoices:
-                    context += f"- {i.invoice_number} | ₹{i.total} | {i.status} | {i.issue_date}\n"
+                    context += f"- Invoice #: {i.invoice_number} | Amount: ₹{i.total} | Status: {i.status} | Date: {i.issue_date}\n"
             
             if customers:
-                context += f"\nCUSTOMERS: {len(customers)} total\n"
+                context += "\n=== CUSTOMERS ===\n"
+                for c in customers:
+                    context += f"- Name: {c.name} | Email: {c.email or 'N/A'} | Phone: {c.phone or 'N/A'}\n"
             
             if products:
-                context += f"\nPRODUCTS: {len(products)} total\n"
+                context += "\n=== PRODUCTS ===\n"
+                for p in products:
+                    context += f"- Name: {p.name} | SKU: {p.sku or 'N/A'} | Price: ₹{p.unit_price}\n"
 
-            # If Gemini is available, use it!
+            # If Gemini is available, use it with a better system prompt!
             if gemini_client:
-                system_prompt = """You are a helpful financial assistant for LedgerLink, an AI-based ERP system. 
-Answer the user's questions using only the provided financial data. 
-Be friendly, concise, and professional. Use Indian Rupees (₹) for currency.
-If the data isn't available, politely say so and suggest what data they might want to add."""
+                system_prompt = """You are LedgerLink AI, a highly helpful financial assistant for the LedgerLink ERP system.
+
+Your capabilities:
+- Answer questions about the user's expenses, invoices, customers, and products
+- Calculate totals, averages, counts
+- Provide financial insights and summaries
+- Be friendly, professional, and concise
+- Always use Indian Rupees (₹) for currency
+- If data isn't available, politely inform the user and suggest what data they can add
+- You can also have natural conversations and explain financial concepts
+- Help users understand their business finances better
+
+Guidelines:
+- Be conversational and engaging
+- Use bullet points for lists
+- Keep responses clear and easy to understand
+- You can acknowledge if you don't have specific data, but offer alternatives
+- Always respond helpfully"""
 
                 try:
                     response = gemini_client.models.generate_content(
                         model="gemini-2.0-flash",
-                        contents=f"{system_prompt}\n\n{context}\n\nUser question: {query}"
+                        contents=f"{system_prompt}\n\n{context}\n\nUser: {query}\n\nLedgerLink AI:"
                     )
                     return jsonify({"response": response.text.strip()})
                 except Exception as e:
                     print("Gemini error:", str(e))
-                    # Fallback to rule-based if Gemini fails
+                    # Fallback to enhanced rule-based if Gemini fails
 
-            # Rule-based fallback
-            response = "I'm sorry, I don't understand that question. Try asking about expenses, invoices, or totals!"
+            # ENHANCED Rule-based fallback - much smarter!
             query_lower = query.lower()
             now = datetime.utcnow()
 
             # Helper: get date range
             def get_date_range():
-                if "last month" in query_lower:
+                if any(term in query_lower for term in ["last month", "previous month"]):
                     if now.month == 1:
                         start = datetime(now.year - 1, 12, 1)
                         end = datetime(now.year, 1, 1)
@@ -99,86 +117,220 @@ If the data isn't available, politely say so and suggest what data they might wa
                         start = datetime(now.year, now.month - 1, 1)
                         end = datetime(now.year, now.month, 1)
                     return start, end, "last month"
-                elif "this month" in query_lower:
+                elif any(term in query_lower for term in ["this month", "current month"]):
                     start = datetime(now.year, now.month, 1)
                     end = datetime(now.year + 1, now.month, 1) if now.month == 12 else datetime(now.year, now.month + 1, 1)
                     return start, end, "this month"
+                elif any(term in query_lower for term in ["this year", "current year"]):
+                    start = datetime(now.year, 1, 1)
+                    end = datetime(now.year + 1, 1, 1)
+                    return start, end, "this year"
+                elif any(term in query_lower for term in ["today"]):
+                    start = datetime(now.year, now.month, now.day)
+                    end = datetime(now.year, now.month, now.day + 1)
+                    return start, end, "today"
                 else:
+                    # Default to this year
                     start = datetime(now.year, 1, 1)
                     end = datetime(now.year + 1, 1, 1)
                     return start, end, "this year"
 
-            # Detect intent
-            is_expense_query = any(word in query_lower for word in ["expense", "expenses", "spend", "spent", "spending"])
-            is_invoice_query = any(word in query_lower for word in ["invoice", "invoices"])
-            is_pending_query = "pending" in query_lower
-            is_paid_query = "paid" in query_lower
-            is_count_query = any(word in query_lower for word in ["how many", "number of", "count"])
-            
-            # Extract category
-            category = None
-            if "food" in query_lower:
-                category = "food"
-            elif "travel" in query_lower or "transport" in query_lower:
-                category = "travel"
-            elif "office" in query_lower or "supplies" in query_lower:
-                category = "office"
+            # Helper: format currency
+            def format_currency(amount):
+                return f"₹{amount:.2f}"
 
+            # Detect intent with more keywords
+            greeting_words = ["hi", "hello", "hey", "how are you", "good morning", "good afternoon", "good evening", "greetings"]
+            thanks_words = ["thank", "thanks", "thx", "great", "awesome", "nice", "perfect"]
+            help_words = ["help", "what can you do", "capabilities", "what do you know", "how do you work"]
+            expense_words = ["expense", "expenses", "spend", "spent", "spending", "cost", "costs", "payment", "payments"]
+            invoice_words = ["invoice", "invoices", "bill", "bills", "sale", "sales", "revenue", "income"]
+            pending_words = ["pending", "unpaid", "outstanding"]
+            paid_words = ["paid", "completed", "done"]
+            count_words = ["how many", "number of", "count", "total number"]
+            total_words = ["total", "sum", "how much", "total amount"]
+            average_words = ["average", "avg", "mean"]
+            max_words = ["highest", "maximum", "most expensive", "largest", "biggest"]
+            min_words = ["lowest", "minimum", "cheapest", "smallest"]
+            customer_words = ["customer", "customers", "client", "clients"]
+            product_words = ["product", "products", "item", "items", "inventory"]
+            dashboard_words = ["dashboard", "overview", "summary", "report", "analytics", "insights"]
+            profit_words = ["profit", "profits", "gain", "gains", "earnings", "net", "balance"]
+
+            # Extract category with more options
+            category = None
+            category_keywords = {
+                "food": ["food", "meal", "meals", "restaurant", "canteen", "lunch", "dinner", "breakfast", "snack", "snacks"],
+                "travel": ["travel", "transport", "transportation", "cab", "taxi", "flight", "train", "bus", "fuel", "petrol", "diesel"],
+                "office": ["office", "supplies", "stationery", "equipment", "furniture", "computer", "laptop", "printer"],
+                "salary": ["salary", "wages", "payroll", "employee", "employees", "staff"],
+                "marketing": ["marketing", "advertisement", "ads", "promotion", "marketing"],
+                "rent": ["rent", "lease", "rental"],
+                "utilities": ["utility", "utilities", "electricity", "water", "internet", "phone", "mobile"],
+                "insurance": ["insurance", "insurances"],
+                "maintenance": ["maintenance", "repair", "repairs", "service"],
+                "tax": ["tax", "taxes", "gst", "vat"]
+            }
+
+            for cat, keywords in category_keywords.items():
+                if any(keyword in query_lower for keyword in keywords):
+                    category = cat
+                    break
+
+            # Check greeting
+            if any(word in query_lower for word in greeting_words):
+                responses = [
+                    "Hello! I'm LedgerLink AI! How can I help you with your finances today?",
+                    "Hi there! Ready to help with your expenses, invoices, or anything financial!",
+                    "Hey! Great to hear from you. What would you like to know about your business finances?"
+                ]
+                response = random.choice(responses)
+                return jsonify({"response": response})
+
+            # Check thanks
+            elif any(word in query_lower for word in thanks_words):
+                responses = [
+                    "You're welcome! Happy to help! Is there anything else you'd like to know?",
+                    "My pleasure! Let me know if you need anything else!",
+                    "Glad I could help! Feel free to ask if you have more questions!"
+                ]
+                response = random.choice(responses)
+                return jsonify({"response": response})
+
+            # Check help
+            elif any(word in query_lower for word in help_words):
+                response = """I'm LedgerLink AI, your financial assistant! Here's what I can help with:
+
+📊 **Financial Queries:**
+• Expenses: total, count, by category, date ranges
+• Invoices: total, count, pending, paid
+• Customers & Products: counts and details
+• Dashboard: overview and summaries
+• Profit calculations
+
+💡 **Try asking:**
+• "What are my total expenses this month?"
+• "How many pending invoices do I have?"
+• "Show me my dashboard overview"
+• "What's my total revenue this year?"
+
+How can I assist you today?"""
+                return jsonify({"response": response})
+
+            # Get date range
             start_date, end_date, period = get_date_range()
 
             # Handle expenses
-            if is_expense_query:
+            if any(word in query_lower for word in expense_words):
                 query_filter = [Expense.user_id == user_id, Expense.date >= start_date, Expense.date < end_date]
                 if category:
                     query_filter.append(Expense.category.ilike(f"%{category}%"))
                 
-                expenses = db.query(Expense).filter(*query_filter).all()
-                total = sum(e.amount for e in expenses)
+                filtered_expenses = db.query(Expense).filter(*query_filter).all()
+                total = sum(e.amount for e in filtered_expenses)
+                count = len(filtered_expenses)
                 
-                if is_count_query:
-                    response = f"You have {len(expenses)} expense(s) {period}."
+                if count == 0:
+                    response = f"You don't have any {category + ' ' if category else ''}expenses {period}."
+                elif any(word in query_lower for word in count_words):
+                    response = f"You have {count} {category + ' ' if category else ''}expense(s) {period}."
+                elif any(word in query_lower for word in max_words) and count > 0:
+                    max_exp = max(filtered_expenses, key=lambda x: x.amount)
+                    response = f"Your highest {category + ' ' if category else ''}expense {period} is {format_currency(max_exp.amount)} - {max_exp.original_text}"
+                elif any(word in query_lower for word in min_words) and count > 0:
+                    min_exp = min(filtered_expenses, key=lambda x: x.amount)
+                    response = f"Your lowest {category + ' ' if category else ''}expense {period} is {format_currency(min_exp.amount)} - {min_exp.original_text}"
+                elif any(word in query_lower for word in average_words) and count > 0:
+                    avg = total / count
+                    response = f"Your average {category + ' ' if category else ''}expense {period} is {format_currency(avg)} across {count} expenses."
                 elif category:
-                    response = f"You spent ₹{total:.2f} on {category} {period}."
+                    response = f"You spent {format_currency(total)} on {category} {period} across {count} expense(s)."
                 else:
-                    response = f"Your total expenses {period} are ₹{total:.2f}."
+                    response = f"Your total expenses {period} are {format_currency(total)} across {count} expense(s)."
             
             # Handle invoices
-            elif is_invoice_query:
+            elif any(word in query_lower for word in invoice_words):
                 query_filter = [Invoice.user_id == user_id]
+                status_text = ""
                 
-                if is_pending_query:
+                if any(word in query_lower for word in pending_words):
                     query_filter.append(Invoice.status == "Pending")
                     status_text = "pending"
-                elif is_paid_query:
+                elif any(word in query_lower for word in paid_words):
                     query_filter.append(Invoice.status == "Paid")
                     status_text = "paid"
-                else:
-                    status_text = ""
                 
-                invoices = db.query(Invoice).filter(*query_filter).all()
-                total = sum(i.total for i in invoices)
+                filtered_invoices = db.query(Invoice).filter(*query_filter).all()
+                total = sum(i.total for i in filtered_invoices)
+                count = len(filtered_invoices)
                 
-                if is_count_query:
-                    response = f"You have {len(invoices)} {status_text + ' ' if status_text else ''}invoice(s)."
+                if count == 0:
+                    response = f"You don't have any {status_text + ' ' if status_text else ''}invoices."
+                elif any(word in query_lower for word in count_words):
+                    response = f"You have {count} {status_text + ' ' if status_text else ''}invoice(s)."
+                elif any(word in query_lower for word in max_words) and count > 0:
+                    max_inv = max(filtered_invoices, key=lambda x: x.total)
+                    response = f"Your largest {status_text + ' ' if status_text else ''}invoice is {format_currency(max_inv.total)} - {max_inv.invoice_number}"
+                elif any(word in query_lower for word in min_words) and count > 0:
+                    min_inv = min(filtered_invoices, key=lambda x: x.total)
+                    response = f"Your smallest {status_text + ' ' if status_text else ''}invoice is {format_currency(min_inv.total)} - {min_inv.invoice_number}"
+                elif any(word in query_lower for word in average_words) and count > 0:
+                    avg = total / count
+                    response = f"Your average {status_text + ' ' if status_text else ''}invoice is {format_currency(avg)} across {count} invoices."
                 else:
-                    response = f"Your {status_text + ' ' if status_text else ''}invoices total ₹{total:.2f}."
+                    response = f"Your {status_text + ' ' if status_text else ''}invoices total {format_currency(total)} across {count} invoice(s)."
             
-            # Handle customers/products
-            elif "customer" in query_lower or "customers" in query_lower:
-                response = f"You have {len(customers)} customer(s)."
+            # Handle customers
+            elif any(word in query_lower for word in customer_words):
+                if len(customers) == 0:
+                    response = "You don't have any customers yet. You can add customers from the Customers page!"
+                elif any(word in query_lower for word in count_words):
+                    response = f"You have {len(customers)} customer(s)."
+                else:
+                    customer_list = "\n".join([f"• {c.name}" for c in customers[:5]])
+                    if len(customers) > 5:
+                        customer_list += f"\n... and {len(customers) - 5} more"
+                    response = f"You have {len(customers)} customer(s):\n{customer_list}"
             
-            elif "product" in query_lower or "products" in query_lower:
-                response = f"You have {len(products)} product(s)."
+            # Handle products
+            elif any(word in query_lower for word in product_words):
+                if len(products) == 0:
+                    response = "You don't have any products yet. You can add products from the Products page!"
+                elif any(word in query_lower for word in count_words):
+                    response = f"You have {len(products)} product(s)."
+                else:
+                    product_list = "\n".join([f"• {p.name} - {format_currency(p.unit_price)}" for p in products[:5]])
+                    if len(products) > 5:
+                        product_list += f"\n... and {len(products) - 5} more"
+                    response = f"You have {len(products)} product(s):\n{product_list}"
             
-            # Stats overview
-            elif "dashboard" in query_lower or "overview" in query_lower or "summary" in query_lower:
+            # Handle profit
+            elif any(word in query_lower for word in profit_words):
                 total_expenses = sum(e.amount for e in expenses)
                 total_invoices = sum(i.total for i in invoices)
+                profit = total_invoices - total_expenses
                 
-                response = (f"Here's your overview: "
-                          f"₹{total_expenses:.2f} total expenses, "
-                          f"₹{total_invoices:.2f} total invoices, "
-                          f"{len(customers)} customers, and {len(products)} products.")
+                if profit >= 0:
+                    response = f"💰 Your profit is {format_currency(profit)}\n\nBreakdown:\n• Total Revenue: {format_currency(total_invoices)}\n• Total Expenses: {format_currency(total_expenses)}"
+                else:
+                    response = f"📉 Your net loss is {format_currency(abs(profit))}\n\nBreakdown:\n• Total Revenue: {format_currency(total_invoices)}\n• Total Expenses: {format_currency(total_expenses)}"
+            
+            # Handle dashboard/overview
+            elif any(word in query_lower for word in dashboard_words):
+                total_expenses = sum(e.amount for e in expenses)
+                total_invoices = sum(i.total for i in invoices)
+                profit = total_invoices - total_expenses
+                
+                response = f"""📊 **LedgerLink Dashboard Overview:\n\n💸 Total Expenses: {format_currency(total_expenses)}\n💰 Total Invoices: {format_currency(total_invoices)}\n💼 Profit: {format_currency(profit)}\n👥 Customers: {len(customers)}\n📦 Products: {len(products)}"""
+            
+            # Default friendly fallback
+            else:
+                responses = [
+                    "I'm here to help! Try asking about your expenses, invoices, customers, or try 'help' to see what I can do!",
+                    "Great question! I can help with expenses, invoices, and more. Ask 'help' for options!",
+                    "I'd love to assist! Try asking about your financial data or say 'help' to see all options!"
+                ]
+                response = random.choice(responses)
 
             return jsonify({"response": response})
 
