@@ -1,4 +1,4 @@
-export const API_BASE = "http://localhost:5000/api";
+export const API_BASE = "https://ledgerlink-2.onrender.com/api";
 
 async function request(path, options = {}) {
   const headers = {
