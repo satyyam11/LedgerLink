@@ -12,8 +12,20 @@ from authlib.integrations.flask_client import OAuth
 
 
 def get_current_user():
-    # Demo mode: always return user 1 for presentation
-    return 1
+    from flask import request
+    
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        # Fallback to demo user 1 for development/presentation
+        return 1
+    
+    token = auth_header.split(" ")[1]
+    try:
+        payload = decode_access_token(token)
+        return payload.get("sub")
+    except:
+        # If token is invalid, fall back to demo user 1
+        return 1
 
 
 def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):

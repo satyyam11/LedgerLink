@@ -1,8 +1,11 @@
+import { getToken } from "./auth";
 export const API_BASE = "https://ledgerlink-2.onrender.com/api";
 
 async function request(path, options = {}) {
+  const token = getToken();
   const headers = {
     "Content-Type": "application/json",
+    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
 
