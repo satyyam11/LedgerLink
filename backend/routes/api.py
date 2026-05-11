@@ -12,8 +12,6 @@ from authlib.integrations.flask_client import OAuth
 
 
 def get_current_user():
-    from flask import request
-    
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         # Fallback to demo user 1 for development/presentation
