@@ -14,16 +14,13 @@ from authlib.integrations.flask_client import OAuth
 def get_current_user():
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        # Fallback to demo user 1 for development/presentation
-        return 1
+        return None
     
     token = auth_header.split(" ")[1]
     try:
-        payload = decode_access_token(token)
-        return payload.get("sub")
+        return decode_access_token(token)
     except:
-        # If token is invalid, fall back to demo user 1
-        return 1
+        return None
 
 
 def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):
@@ -97,7 +94,7 @@ def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):
                     db.refresh(user)
 
                 # Create access token for our app
-                access_token = create_access_token({"sub": user.id})
+                access_token = create_access_token(user.id)
 
                 return jsonify({
                     "success": True,
