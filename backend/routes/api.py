@@ -792,64 +792,6 @@ How can I assist you today?"""
             print("Google OAuth error:", str(e))
             return jsonify({"error": "Google authentication failed"}), 500
 
-    @bp.route("/auth/google", methods=["POST"])
-    def google_auth_token():
-        """Alternative Google OAuth endpoint that accepts an ID token from frontend"""
-        data = request.get_json() or {}
-        id_token = data.get("id_token")
-        
-        if not id_token:
-            return jsonify({"error": "id_token required"}), 400
-        
-        try:
-            # For this demo, we'll simulate Google token verification
-            # In production, you should verify the token with Google's API
-            
-            # For now, let's create a demo Google auth flow that just creates/gets user by email
-            # In production, use google-auth library to verify the token
-            
-            # Extract email from a mock payload (in real use, verify the token first!)
-            # For demo purposes, we'll expect the frontend to send email in the payload too
-            email = data.get("email")
-            
-            if not email:
-                return jsonify({"error": "email required for demo"}), 400
-            
-            db = SessionLocal()
-            try:
-                # Check if user exists
-                user = db.query(User).filter(User.email == email).first()
-                
-                if user:
-                    pass
-                else:
-                    # Create new user
-                    user = User(
-                        email=email,
-                        google_id=f"demo_{email}",
-                        password_hash=None
-                    )
-                    db.add(user)
-                    db.commit()
-                    db.refresh(user)
-                
-                # Create access token
-                access_token = create_access_token(user.id)
-                
-                return jsonify({
-                    "success": True,
-                    "token": access_token,
-                    "user": {
-                        "id": user.id,
-                        "email": user.email
-                    }
-                })
-                
-            finally:
-                db.close()
-                
-        except Exception as e:
-            print("Google token auth error:", str(e))
-            return jsonify({"error": "Authentication failed"}), 500
+
 
     return bp

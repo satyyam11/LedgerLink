@@ -55,24 +55,7 @@ try:
 except Exception as e:
     print(f"Migration warning: {e}")
 
-print("Creating demo user...")
-db = SessionLocal()
-try:
-    from services.auth_utils import hash_password
-    demo_user = db.query(User).filter(User.id == 1).first()
-    if not demo_user:
-        demo_user = User(
-            name="Demo User",
-            email="demo@ledgerlink.com",
-            password_hash=hash_password("demo123")
-        )
-        db.add(demo_user)
-        db.commit()
-        print("Demo user created!")
-    else:
-        print("Demo user already exists!")
-finally:
-    db.close()
+
 
 api_bp = create_api_blueprint(expense_ai, invoice_ai, gemini_client)
 app.register_blueprint(api_bp, url_prefix="/api")
