@@ -47,6 +47,14 @@ print("Initializing database...")
 init_db()
 print("Database ready!")
 
+print("Running database migrations...")
+try:
+    from migrate_add_user_name import migrate
+    migrate()
+    print("Migrations complete!")
+except Exception as e:
+    print(f"Migration warning: {e}")
+
 print("Creating demo user...")
 db = SessionLocal()
 try:
