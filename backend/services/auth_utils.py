@@ -21,7 +21,7 @@ def verify_password(password: str, password_hash: str | None) -> bool:
 def create_access_token(user_id: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "iat": now,
         "exp": now + timedelta(days=JWT_EXP_DAYS),
     }
