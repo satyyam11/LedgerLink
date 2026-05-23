@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { saveToken } from "../auth";
+import { useAuth } from "../auth";
 import { api, loginWithGoogle } from "../api";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -15,6 +15,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -39,7 +40,7 @@ export default function Register() {
 
     try {
       const data = await api.register(email, password, name);
-      saveToken(data.token);
+      login(data.token);
       navigate("/", { replace: true });
     } catch (err) {
       setError(err.message);
@@ -53,7 +54,7 @@ export default function Register() {
     try {
       const credential = credentialResponse.credential;
       const data = await loginWithGoogle(credential);
-      saveToken(data.token);
+      login(data.token);
       navigate("/", { replace: true });
     } catch (err) {
       setError(err.message);

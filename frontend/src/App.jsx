@@ -4,8 +4,8 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-import { isLoggedIn, clearToken } from "./auth";
-import { useState, useEffect } from "react";
+import { useAuth } from "./auth";
+import { useState } from "react";
 import Dashboard from "./pages/Dashboard.jsx";
 import Expenses from "./pages/Expenses.jsx";
 import Invoices from "./pages/Invoices.jsx";
@@ -26,33 +26,31 @@ const navItems = [
 ];
 
 function ProtectedRoute({ children }) {
-  if (!isLoggedIn()) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
 function AuthRoute({ children }) {
-  if (isLoggedIn()) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
   return children;
 }
 
 export default function App() {
-  const [authState, setAuthState] = useState(isLoggedIn());
+  const { isAuthenticated, logout, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    setAuthState(isLoggedIn());
-  }, []);
+  // Show loading state while checking auth
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff' }}>Loading...</div>;
+  }
 
-  const handleLogout = () => {
-    clearToken();
-    setAuthState(false);
-  };
-
-  if (!authState) {
+  if (!isAuthenticated) {
     return (
       <Routes>
         <Route path="/login" element={
@@ -110,7 +108,7 @@ export default function App() {
           ))}
         </nav>
 
-        <button className="logout-btn" onClick={handleLogout}>
+        <button className="logout-btn" onClick={logout}>
           Logout
         </button>
       </aside>
