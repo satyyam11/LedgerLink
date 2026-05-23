@@ -918,6 +918,13 @@ tr:last-child td {
   font-size: 1.4rem;
 }
 
+.auth-google-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .auth-switch {
   text-align: center;
   margin-top: 1.75rem;

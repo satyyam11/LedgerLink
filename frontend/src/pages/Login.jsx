@@ -116,7 +116,7 @@ export default function Login() {
               <div className="auth-divider-line"></div>
             </div>
             
-            <div style={{ width: "100%" }}>
+            <div className="auth-google-wrapper">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={handleGoogleError}
