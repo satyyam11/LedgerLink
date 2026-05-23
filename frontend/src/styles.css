@@ -1025,3 +1025,118 @@ tr:last-child td {
     padding: 2rem 1.5rem;
   }
 }
+
+/* ========================= */
+/* Responsive Sidebar */
+/* ========================= */
+
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.75rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--accent-soft);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+
+/* ========================= */
+/* Responsive Media Queries */
+/* ========================= */
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .topbar {
+    padding-left: 0.75rem;
+  }
+
+  .topbar h2 {
+    font-size: 1.25rem;
+  }
+
+  .main {
+    margin-left: 0;
+  }
+
+  .page {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .topbar h2 {
+    font-size: 1.1rem;
+  }
+
+  .page {
+    padding: 0.75rem;
+  }
+
+  .auth-container-single {
+    margin: 1rem;
+    border-radius: 16px;
+  }
+
+  .auth-btn {
+    padding: 0.9rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-text h1 {
+    font-size: 1.25rem;
+  }
+
+  .brand-text p {
+    font-size: 0.8rem;
+  }
+
+  .nav-link {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.95rem;
+  }
+}

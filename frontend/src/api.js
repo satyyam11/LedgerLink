@@ -1,5 +1,6 @@
 import { getToken } from "./auth";
 export const API_BASE = "https://ledgerlink-2.onrender.com/api";
+export const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
 async function request(path, options = {}) {
   const token = getToken();
@@ -32,10 +33,10 @@ export const api = {
   },
 
   // ---------- AUTH ----------
-  async register(email, password) {
+  async register(email, password, name) {
     return request("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, name })
     });
   },
 
@@ -43,13 +44,6 @@ export const api = {
     return request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password })
-    });
-  },
-
-  async googleAuth(email) {
-    return request("/auth/google", {
-      method: "POST",
-      body: JSON.stringify({ email, id_token: "demo_token" })
     });
   },
 
@@ -120,3 +114,11 @@ export const api = {
   }
 
 };
+
+export async function loginWithGoogle(credential) {
+  return request("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential })
+  });
+}
+

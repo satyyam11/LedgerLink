@@ -41,6 +41,7 @@ function AuthRoute({ children }) {
 
 export default function App() {
   const [authState, setAuthState] = useState(isLoggedIn());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setAuthState(isLoggedIn());
@@ -76,9 +77,16 @@ export default function App() {
   <div className="rupee-layer layer2"></div>
   <div className="rupee-layer layer3"></div>
 
+  {/* Mobile overlay */}
+  {sidebarOpen && (
+    <div 
+      className="sidebar-overlay" 
+      onClick={() => setSidebarOpen(false)}
+    />
+  )}
 
-      <aside className="sidebar">
-        <NavLink to="/" className="brand">
+      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+        <NavLink to="/" className="brand" onClick={() => setSidebarOpen(false)}>
           <div className="brand-logo">Ł</div>
           <div className="brand-text">
             <h1>LedgerLink</h1>
@@ -95,6 +103,7 @@ export default function App() {
               className={({ isActive }) =>
                 "nav-link" + (isActive ? " nav-link-active" : "")
               }
+              onClick={() => setSidebarOpen(false)}
             >
               {item.label}
             </NavLink>
@@ -108,6 +117,12 @@ export default function App() {
 
       <main className="main">
         <header className="topbar">
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            ☰
+          </button>
           <h2>LedgerLink Console</h2>
         </header>
 

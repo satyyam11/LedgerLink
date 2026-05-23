@@ -43,6 +43,79 @@ def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):
     def login():
         return login_user(request.get_json() or {})
 
+    @bp.route("/auth/google", methods=["POST"])
+    def google_auth():
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+
+        data = request.get_json() or {}
+        credential = data.get("credential")
+        
+        if not credential:
+            return jsonify({"error": "Missing credential"}), 400
+
+        GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+        
+        try:
+            # Verify the Google token
+            idinfo = id_token.verify_oauth2_token(
+                credential, 
+                google_requests.Request(), 
+                GOOGLE_CLIENT_ID
+            )
+
+            # Get user info from token
+            google_id = idinfo["sub"]
+            email = idinfo.get("email")
+            name = idinfo.get("name", "User")
+
+            db = SessionLocal()
+            try:
+                # Check if user already exists
+                user = db.query(User).filter(User.google_id == google_id).first()
+                
+                if not user:
+                    # Check if user exists with this email
+                    user = db.query(User).filter(User.email == email).first()
+                    if user:
+                        # Link Google account to existing user
+                        user.google_id = google_id
+                    else:
+                        # Create new user
+                        # Generate a random password (not used for Google login)
+                        import secrets
+                        random_password = secrets.token_urlsafe(16)
+                        
+                        user = User(
+                            name=name,
+                            email=email,
+                            password_hash=random_password,  # Placeholder
+                            google_id=google_id
+                        )
+                        db.add(user)
+                    db.commit()
+                    db.refresh(user)
+
+                # Create access token for our app
+                access_token = create_access_token({"sub": user.id})
+
+                return jsonify({
+                    "success": True,
+                    "token": access_token,
+                    "user": {
+                        "id": user.id,
+                        "name": user.name,
+                        "email": user.email
+                    }
+                })
+            finally:
+                db.close()
+
+        except ValueError as e:
+            return jsonify({"error": "Invalid Google token"}), 400
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     # ---------- CHATBOT ----------
     @bp.route("/chatbot/query", methods=["POST"])
     def chatbot_query():
