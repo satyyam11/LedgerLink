@@ -124,7 +124,7 @@ export default function Login() {
                 theme="outline"
                 size="large"
                 text="continue_with"
-                shape="rectangular"
+                shape="pill"
                 width="100%"
               />
             </div>

@@ -1,6 +1,6 @@
 import { getToken } from "./auth";
 export const API_BASE = "https://ledgerlink-2.onrender.com/api";
-export const GOOGLE_CLIENT_ID = "493852389490-dqb47jspck82edlghg617995kd9fvn.apps.googleusercontent.com";
+export const GOOGLE_CLIENT_ID = "493852389490-dqb47jnspck82edltghg617995kd9fvn.apps.googleusercontent.com";
 
 async function request(path, options = {}) {
   const token = getToken();
