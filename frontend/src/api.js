@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { getToken } from "./auth.jsx";
 export const API_BASE = "https://ledgerlink-2.onrender.com/api";
 export const GOOGLE_CLIENT_ID = "493852389490-dqb47jnspck82edltghg617995kd9fvn.apps.googleusercontent.com";
 
