@@ -8,6 +8,7 @@ from services.auth_utils import (
 )
 
 def register_user(data):
+    name = data.get("name")
     email = data.get("email")
     password = data.get("password")
 
@@ -21,6 +22,7 @@ def register_user(data):
             return jsonify({"error": "User already exists"}), 400
 
         user = User(
+            name=name,
             email=email,
             password_hash=hash_password(password)
         )
@@ -35,6 +37,7 @@ def register_user(data):
             "token": token,
             "user": {
                 "id": user.id,
+                "name": user.name,
                 "email": user.email
             }
         }), 201
@@ -63,6 +66,7 @@ def login_user(data):
             "token": token,
             "user": {
                 "id": user.id,
+                "name": user.name,
                 "email": user.email
             }
         })
