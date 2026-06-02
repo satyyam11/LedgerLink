@@ -11,6 +11,7 @@ export default function Expenses() {
   const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
+  const [receiptFile, setReceiptFile] = useState(null);
 
   async function loadExpenses() {
     try {
@@ -35,9 +36,10 @@ export default function Expenses() {
     setLoading(true);
     setError("");
     try {
-      const res = await api.categorizeExpense(text.trim());
+      const res = await api.categorizeExpense(text.trim(), receiptFile);
       setResult(res.data);
       setText("");
+      setReceiptFile(null);
       addToast("Expense categorized successfully");
       await loadExpenses();
     } catch (err) {
@@ -54,7 +56,7 @@ export default function Expenses() {
       <h3>Expenses</h3>
       <p className="muted">
         Describe an expense in natural language. The AI will categorize and
-        store it.
+        store it. You can also attach a receipt.
       </p>
 
       <form onSubmit={handleSubmit} className="card form">
@@ -65,6 +67,14 @@ export default function Expenses() {
           onChange={(e) => setText(e.target.value)}
           placeholder="Bought uniform for 2500 rupees from Myntra"
         />
+
+        <label>Receipt (optional)</label>
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={(e) => setReceiptFile(e.target.files[0])}
+        />
+
         <button type="submit" disabled={loading}>
           {loading ? "Categorizing..." : "Categorize & Save"}
         </button>
@@ -98,7 +108,7 @@ export default function Expenses() {
       <div className="card" style={{ marginTop: "1.5rem" }}>
         <h4>Stored Expenses</h4>
         {listLoading ? (
-          <SkeletonTable rows={5} cols={6} />
+          <SkeletonTable rows={5} cols={7} />
         ) : (
           <div className="table-wrapper">
             <table>
@@ -110,6 +120,7 @@ export default function Expenses() {
                   <th>Amount</th>
                   <th>Vendor</th>
                   <th>Date</th>
+                  <th>Receipt</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,11 +132,22 @@ export default function Expenses() {
                     <td>{r.amount}</td>
                     <td>{r.vendor}</td>
                     <td>{(r.date || "").slice(0, 10)}</td>
+                    <td>
+                      {r.receipt_url && (
+                        <a href={r.receipt_url} target="_blank" rel="noreferrer">
+                          <img
+                            src={r.receipt_url}
+                            alt="Receipt"
+                            style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px" }}
+                          />
+                        </a>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="muted">
+                    <td colSpan="7" className="muted">
                       No expenses yet. Try adding one above.
                     </td>
                   </tr>

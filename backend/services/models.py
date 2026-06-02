@@ -103,4 +103,5 @@ class Expense(Base):
     category = Column(String)
     confidence = Column(Float)
     date = Column(DateTime)
+    receipt_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

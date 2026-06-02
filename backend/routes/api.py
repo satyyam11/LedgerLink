@@ -23,7 +23,7 @@ def get_current_user():
         return None
 
 
-def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None):
+def create_api_blueprint(expense_ai, invoice_ai, gemini_client=None, cloudinary_config=None):
     bp = Blueprint("api", __name__)
 
     # ---------- HEALTH ----------
@@ -431,8 +431,14 @@ How can I assist you today?"""
 
         start = time.time()
 
-        data = request.get_json() or {}
-        text = data.get("text")
+        # Handle both JSON and FormData
+        if request.content_type and "multipart/form-data" in request.content_type:
+            text = request.form.get("text")
+            receipt_file = request.files.get("receipt")
+        else:
+            data = request.get_json() or {}
+            text = data.get("text")
+            receipt_file = None
 
         if not text:
             return jsonify({"error": "text required"}), 400
@@ -449,11 +455,27 @@ How can I assist you today?"""
         if isinstance(result.get("date"), str) or not result.get("date"):
             result["date"] = datetime.utcnow()
 
+        # Upload receipt if provided and Cloudinary is available
+        receipt_url = None
+        if receipt_file and cloudinary_config is not False:
+            try:
+                import cloudinary.uploader
+                upload_result = cloudinary.uploader.upload(receipt_file, folder="ledgerlink/receipts")
+                receipt_url = upload_result.get("secure_url")
+                print("Receipt uploaded:", receipt_url)
+            except Exception as e:
+                print(f"Error uploading receipt: {e}")
+                # Don't fail the whole request if receipt upload fails
+                receipt_url = None
+
         db = SessionLocal()
         try:
-            exp = Expense(**result, user_id=user_id)
+            exp = Expense(**result, user_id=user_id, receipt_url=receipt_url)
             db.add(exp)
             db.commit()
+            db.refresh(exp)
+            result["id"] = exp.id
+            result["receipt_url"] = exp.receipt_url
         except Exception as e:
             db.rollback()
             return jsonify({"error": str(e)}), 500
@@ -482,7 +504,8 @@ How can I assist you today?"""
                 "category": e.category,
                 "amount": e.amount,
                 "vendor": e.vendor,
-                "date": str(e.date)
+                "date": str(e.date),
+                "receipt_url": e.receipt_url
             }
             for e in expenses
         ])

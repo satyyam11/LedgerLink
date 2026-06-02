@@ -10,6 +10,13 @@ export default function Chatbot() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const quickReplies = [
+    "Total expenses this month?",
+    "Show pending invoices?",
+    "Dashboard overview?",
+    "What's my total revenue?"
+  ];
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -18,23 +25,26 @@ export default function Chatbot() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
+  const handleSend = async (text) => {
+    if (!text.trim() || loading) return;
 
-    const userMsg = input.trim();
-    setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setMessages((prev) => [...prev, { role: "user", text: text.trim() }]);
     setInput("");
     setLoading(true);
 
     try {
-      const data = await api.chatbotQuery(userMsg);
+      const data = await api.chatbotQuery(text.trim());
       setMessages((prev) => [...prev, { role: "bot", text: data.response }]);
     } catch (err) {
       setMessages((prev) => [...prev, { role: "bot", text: "Sorry, I couldn't process that request." }]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleSend(input);
   };
 
   return (
@@ -61,9 +71,30 @@ export default function Chatbot() {
           {loading && (
             <div className="chatbot-message chatbot-bot">Typing...</div>
           )}
+          {!loading && messages.length === 1 && (
+            <div className="quick-replies" style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "0 12px", marginBottom: "8px" }}>
+              {quickReplies.map((reply, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(reply)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "20px",
+                    border: "1px solid #6366f1",
+                    background: "white",
+                    color: "#6366f1",
+                    fontSize: "14px",
+                    cursor: "pointer"
+                  }}
+                >
+                  {reply}
+                </button>
+              ))}
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
-        <form className="chatbot-input" onSubmit={handleSend}>
+        <form className="chatbot-input" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Ask about your finances..."

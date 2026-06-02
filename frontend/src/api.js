@@ -4,8 +4,10 @@ export const GOOGLE_CLIENT_ID = "493852389490-dqb47jnspck82edltghg617995kd9fvn.a
 
 async function request(path, options = {}) {
   const token = getToken();
+  const isFormData = options.body instanceof FormData;
+  
   const headers = {
-    "Content-Type": "application/json",
+    ...(!isFormData ? { "Content-Type": "application/json" } : {}),
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
@@ -56,10 +58,19 @@ export const api = {
   },
 
   // ---------- EXPENSE ----------
-  async categorizeExpense(text) {
+  async categorizeExpense(text, receiptFile = null) {
+    let body;
+    if (receiptFile) {
+      body = new FormData();
+      body.append("text", text);
+      body.append("receipt", receiptFile);
+    } else {
+      body = JSON.stringify({ text });
+    }
+
     return request("/expense/categorize", {
       method: "POST",
-      body: JSON.stringify({ text })
+      body
     });
   },
 

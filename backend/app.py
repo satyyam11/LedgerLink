@@ -23,6 +23,26 @@ CORS(
 
 print("Starting LedgerLink Backend...")
 
+# Initialize Cloudinary
+cloudinary_config = None
+try:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
+    if CLOUDINARY_URL:
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+        print("Cloudinary initialized!")
+    else:
+        print("CLOUDINARY_URL not found, receipt upload disabled.")
+        cloudinary_config = False
+except ImportError:
+    print("cloudinary not installed, receipt upload disabled.")
+    cloudinary_config = False
+except Exception as e:
+    print(f"Error initializing Cloudinary: {e}, receipt upload disabled.")
+    cloudinary_config = False
+
 # Initialize Gemini AI
 gemini_client = None
 try:
@@ -57,7 +77,7 @@ except Exception as e:
 
 
 
-api_bp = create_api_blueprint(expense_ai, invoice_ai, gemini_client)
+api_bp = create_api_blueprint(expense_ai, invoice_ai, gemini_client, cloudinary_config)
 app.register_blueprint(api_bp, url_prefix="/api")
 
 

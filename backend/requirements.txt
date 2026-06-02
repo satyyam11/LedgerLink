@@ -25,3 +25,6 @@ psycopg2-binary==2.9.11
 # --- Data / ML (keep only if YOU use them) ---
 pandas==2.2.3
 scikit-learn==1.6.1
+
+# --- File Upload ---
+cloudinary==1.41.0
